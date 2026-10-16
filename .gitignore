@@ -1,8 +1,25 @@
-.env
+# Abhängigkeiten und Builds
 node_modules/
-data/
-*.sqlite
-*.sqlite-shm
-*.sqlite-wal
 dist/
-backup.log
+build/
+coverage/
+
+# Umgebung und Geheimnisse (ins Repo gehört nur .env.example)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+
+# Daten, Datenbanken, Backups
+data/
+backups/
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*
+
+# Logs und System
+*.log
+.DS_Store
