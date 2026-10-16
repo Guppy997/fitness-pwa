@@ -4,6 +4,7 @@ import exercisesRouter from './routes/exercises.js';
 import dailyRouter from './routes/daily.js';
 import gymRouter from './routes/gym.js';
 import statsRouter from './routes/stats.js';
+import workoutsRouter from './routes/workouts.js';
 
 // nginx proxied /api/ auf denselben Origin wie das Frontend — kein CORS nötig
 // (siehe lern-pwa-Muster, gleicher Grund).
@@ -22,6 +23,7 @@ app.use('/api/exercises', exercisesRouter);
 app.use('/api/daily', dailyRouter);
 app.use('/api/gym', gymRouter);
 app.use('/api/stats', statsRouter);
+app.use('/api/workouts', workoutsRouter);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 

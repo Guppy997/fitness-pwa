@@ -2,11 +2,80 @@ import { useEffect, useRef, useState } from 'react';
 import { IconGrip, IconTrash, IconPlus } from '../icons.jsx';
 import { formatMMSS, parseMMSS } from '../constants.js';
 
-const GROUPS = [
-  { title: 'Täglich', category: 'daily', workout: null, filter: (e) => e.category === 'daily' },
-  { title: 'Gym — Workout A', category: 'gym', workout: 'A', filter: (e) => e.category === 'gym' && e.workout === 'A' },
-  { title: 'Gym — Workout B', category: 'gym', workout: 'B', filter: (e) => e.category === 'gym' && e.workout === 'B' }
-];
+const DAILY_GROUP = { key: 'daily', title: 'Täglich', category: 'daily', workout: null, filter: (e) => e.category === 'daily' };
+
+function AddWorkoutForm({ onAdd, onDone }) {
+  const [name, setName] = useState('');
+
+  const submit = () => {
+    if (!name.trim()) return;
+    onAdd(name.trim());
+    onDone();
+  };
+
+  return (
+    <div className="add-workout-form">
+      <input
+        type="text"
+        placeholder="Name des Workouts (z.B. C)"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && submit()}
+        autoFocus
+      />
+      <button className="btn-ghost" onClick={onDone}>Abbrechen</button>
+      <button className="btn-secondary" style={{ width: 'auto', padding: '10px 20px' }} onClick={submit}>
+        Anlegen
+      </button>
+    </div>
+  );
+}
+
+function WorkoutGroupHeader({ workout, onRename, onToggleEnabled, onDelete }) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(workout.name);
+
+  useEffect(() => {
+    setName(workout.name);
+  }, [workout.name]);
+
+  const commitRename = () => {
+    setEditing(false);
+    if (name.trim() && name.trim() !== workout.name) onRename(name.trim());
+    else setName(workout.name);
+  };
+
+  return (
+    <div className="workout-group-header">
+      {editing ? (
+        <input
+          className="workout-name-input"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onBlur={commitRename}
+          onKeyDown={(e) => e.key === 'Enter' && commitRename()}
+          autoFocus
+        />
+      ) : (
+        <h2 onClick={() => setEditing(true)}>Gym — Workout {workout.name}</h2>
+      )}
+      <div className="workout-group-actions">
+        <button
+          type="button"
+          className={`toggle ${workout.enabled ? 'on' : ''}`}
+          aria-label="Workout aktiv"
+          onClick={() => onToggleEnabled(workout.enabled ? 0 : 1)}
+        />
+        <button
+          className="delete-btn"
+          onClick={() => window.confirm(`Workout "${workout.name}" inkl. aller Übungen wirklich löschen?`) && onDelete()}
+        >
+          <IconTrash width={16} height={16} />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function AddExerciseForm({ group, onAdd, onDone }) {
   const [name, setName] = useState('');
@@ -278,20 +347,53 @@ function DraggableExerciseGroup({ group, exercises, onUpdate, onDelete, onReorde
   );
 }
 
-export default function Settings({ exercises, onUpdate, onAdd, onDelete, onReorder }) {
+export default function Settings({
+  exercises,
+  workouts,
+  onUpdate,
+  onAdd,
+  onDelete,
+  onReorder,
+  onAddWorkout,
+  onUpdateWorkout,
+  onDeleteWorkout
+}) {
   const [addingFor, setAddingFor] = useState(null);
+  const [addingWorkout, setAddingWorkout] = useState(false);
+
+  const groups = [
+    DAILY_GROUP,
+    ...workouts.map((w) => ({
+      key: w.key,
+      title: `Gym — Workout ${w.name}`,
+      category: 'gym',
+      workout: w.key,
+      filter: (e) => e.category === 'gym' && e.workout === w.key
+    }))
+  ];
 
   return (
     <div className="content">
       <h1>Einstellungen</h1>
       <p style={{ marginBottom: 8 }}>
         Sätze, Ziel und Pause pro Übung anpassbar. Am Griff-Symbol ziehen, um die Reihenfolge zu ändern.
+        Deaktivierte Workouts werden bei der Rotation übersprungen.
       </p>
-      {GROUPS.map((group) => {
+      {groups.map((group) => {
         const list = exercises.filter(group.filter);
+        const workout = workouts.find((w) => w.key === group.workout);
         return (
-          <div className="card" key={group.title}>
-            <h2>{group.title}</h2>
+          <div className="card" key={group.key}>
+            {workout ? (
+              <WorkoutGroupHeader
+                workout={workout}
+                onRename={(name) => onUpdateWorkout(workout.key, { name })}
+                onToggleEnabled={(enabled) => onUpdateWorkout(workout.key, { enabled })}
+                onDelete={() => onDeleteWorkout(workout.key)}
+              />
+            ) : (
+              <h2>{group.title}</h2>
+            )}
             <DraggableExerciseGroup
               group={group}
               exercises={list}
@@ -300,16 +402,26 @@ export default function Settings({ exercises, onUpdate, onAdd, onDelete, onReord
               onReorder={onReorder}
             />
 
-            {addingFor === group.title ? (
+            {addingFor === group.key ? (
               <AddExerciseForm group={group} onAdd={onAdd} onDone={() => setAddingFor(null)} />
             ) : (
-              <button className="btn-ghost add-exercise-btn" onClick={() => setAddingFor(group.title)}>
+              <button className="btn-ghost add-exercise-btn" onClick={() => setAddingFor(group.key)}>
                 <IconPlus width={16} height={16} /> Übung hinzufügen
               </button>
             )}
           </div>
         );
       })}
+
+      <div className="card">
+        {addingWorkout ? (
+          <AddWorkoutForm onAdd={onAddWorkout} onDone={() => setAddingWorkout(false)} />
+        ) : (
+          <button className="btn-ghost add-exercise-btn" onClick={() => setAddingWorkout(true)}>
+            <IconPlus width={16} height={16} /> Neues Workout anlegen
+          </button>
+        )}
+      </div>
     </div>
   );
 }

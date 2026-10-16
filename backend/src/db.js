@@ -10,12 +10,19 @@ db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
 db.exec(`
+  CREATE TABLE IF NOT EXISTS workouts (
+    key TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    order_index INTEGER NOT NULL DEFAULT 0
+  );
+
   CREATE TABLE IF NOT EXISTS exercises (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     key TEXT NOT NULL UNIQUE,
     name TEXT NOT NULL,
     category TEXT NOT NULL,      -- 'daily' | 'gym'
-    workout TEXT,                -- 'A' | 'B' | NULL (daily)
+    workout TEXT,                -- Referenz auf workouts.key, oder NULL (daily)
     sets INTEGER NOT NULL DEFAULT 1,
     target INTEGER NOT NULL,     -- Zielwert: Wiederholungen ODER Sekunden, je nach unit
     unit TEXT NOT NULL DEFAULT 'reps',   -- 'reps' | 'seconds'
@@ -63,6 +70,23 @@ db.exec(`
 
 db.prepare(`INSERT OR IGNORE INTO rotation_state (id, last_workout) VALUES (1, NULL)`).run();
 
+// Workouts A/B einmalig seeden — nur beim allerersten Start (leere Tabelle).
+// INSERT OR IGNORE allein reicht nicht: es kann "nie erstellt" nicht von
+// "wurde von Aaron gelöscht" unterscheiden und würde gelöschte Workouts bei
+// jedem Neustart wieder auferstehen lassen.
+if (db.prepare('SELECT COUNT(*) AS c FROM workouts').get().c === 0) {
+  const insertWorkout = db.prepare(`
+    INSERT INTO workouts (key, name, enabled, order_index) VALUES (@key, @name, @enabled, @order_index)
+  `);
+  const seedWorkoutsTx = db.transaction((rows) => {
+    for (const row of rows) insertWorkout.run(row);
+  });
+  seedWorkoutsTx([
+    { key: 'A', name: 'A', enabled: 1, order_index: 1 },
+    { key: 'B', name: 'B', enabled: 1, order_index: 2 }
+  ]);
+}
+
 // Default-Übungen einmalig seeden — Bestand bleibt bei erneutem Start unangetastet,
 // damit von Aaron editierte Werte (Sätze/Gewicht/enabled) nicht überschrieben werden.
 const DEFAULT_EXERCISES = [
@@ -95,17 +119,21 @@ const DEFAULT_EXERCISES = [
   { key: 'stretch_b', name: 'Dehnen', category: 'gym', workout: 'B', sets: 1, target: 240, unit: 'seconds', rest_seconds: 0, order_index: 9 }
 ];
 
-const insertExercise = db.prepare(`
-  INSERT OR IGNORE INTO exercises (key, name, category, workout, sets, target, unit, rest_seconds, order_index, optional, enabled)
-  VALUES (@key, @name, @category, @workout, @sets, @target, @unit, @rest_seconds, @order_index, @optional, @enabled)
-`);
+// Wie bei den Workouts: nur beim allerersten Start seeden, sonst werden von
+// Aaron gelöschte Standard-Übungen bei jedem Neustart wieder eingefügt.
+if (db.prepare('SELECT COUNT(*) AS c FROM exercises').get().c === 0) {
+  const insertExercise = db.prepare(`
+    INSERT INTO exercises (key, name, category, workout, sets, target, unit, rest_seconds, order_index, optional, enabled)
+    VALUES (@key, @name, @category, @workout, @sets, @target, @unit, @rest_seconds, @order_index, @optional, @enabled)
+  `);
 
-const seedTx = db.transaction((rows) => {
-  for (const row of rows) {
-    insertExercise.run({ optional: 0, enabled: 1, ...row });
-  }
-});
-seedTx(DEFAULT_EXERCISES);
+  const seedTx = db.transaction((rows) => {
+    for (const row of rows) {
+      insertExercise.run({ optional: 0, enabled: 1, ...row });
+    }
+  });
+  seedTx(DEFAULT_EXERCISES);
+}
 
 // Migration für bereits laufende Installationen: alte Aufwärm-Namen (vor der
 // Umstellung auf "immer Laufband") aktualisieren — INSERT OR IGNORE oben

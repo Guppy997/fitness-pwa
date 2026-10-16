@@ -4,9 +4,16 @@ import { today } from '../util.js';
 
 const router = Router();
 
+// Rotiert reihum durch die aktivierten Workouts (Reihenfolge = order_index).
+// Ist nur eins aktiv, bleibt es immer dasselbe ("fixiertes" Workout); ist
+// keins aktiv, gibt es nichts zu starten.
 const nextWorkout = () => {
+  const enabled = db.prepare('SELECT key FROM workouts WHERE enabled = 1 ORDER BY order_index ASC').all();
+  if (enabled.length === 0) return null;
   const state = db.prepare('SELECT last_workout FROM rotation_state WHERE id = 1').get();
-  return state.last_workout === 'A' ? 'B' : 'A';
+  const lastIndex = enabled.findIndex((w) => w.key === state.last_workout);
+  const nextIndex = lastIndex === -1 ? 0 : (lastIndex + 1) % enabled.length;
+  return enabled[nextIndex].key;
 };
 
 const sessionDetail = (id) => {
@@ -53,7 +60,12 @@ router.get('/history', (req, res) => {
 });
 
 router.post('/sessions', (req, res) => {
-  const workout = req.body.workout === 'A' || req.body.workout === 'B' ? req.body.workout : nextWorkout();
+  const requested = req.body.workout
+    ? db.prepare('SELECT key FROM workouts WHERE key = ? AND enabled = 1').get(req.body.workout)?.key
+    : null;
+  const workout = requested || nextWorkout();
+  if (!workout) return res.status(400).json({ error: 'Kein aktiviertes Workout vorhanden' });
+
   const result = db
     .prepare('INSERT INTO gym_sessions (date, workout) VALUES (?, ?)')
     .run(today(), workout);

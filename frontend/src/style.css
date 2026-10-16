@@ -758,6 +758,48 @@ textarea {
   transform: translateX(16px);
 }
 
+.workout-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.workout-group-header h2 {
+  flex: 1;
+  min-width: 0;
+}
+.workout-name-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 17px;
+  font-weight: 700;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.workout-group-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.add-workout-form {
+  margin-top: 10px;
+  padding: 14px;
+  background: var(--emerald-50);
+  border-radius: 14px;
+  display: flex;
+  gap: 10px;
+}
+.add-workout-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
 /* Versionsverlauf */
 .app-footer {
   position: fixed;

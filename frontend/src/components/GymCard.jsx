@@ -24,6 +24,15 @@ export default function GymCard({ nextWorkout, todaySession, onStart, onContinue
     );
   }
 
+  if (!nextWorkout) {
+    return (
+      <div className="card">
+        <h2>Gym</h2>
+        <p>Kein aktives Workout konfiguriert. Unter Einstellungen ein Workout aktivieren oder anlegen.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="card">
       <h2>Gym</h2>

@@ -25,8 +25,8 @@ router.post('/', (req, res) => {
   if (!name || !String(name).trim()) return res.status(400).json({ error: 'Name erforderlich' });
   if (!['daily', 'gym'].includes(category)) return res.status(400).json({ error: 'category muss daily oder gym sein' });
   const workoutVal = category === 'gym' ? workout : null;
-  if (category === 'gym' && !['A', 'B'].includes(workoutVal)) {
-    return res.status(400).json({ error: 'workout muss A oder B sein' });
+  if (category === 'gym' && !db.prepare('SELECT 1 FROM workouts WHERE key = ?').get(workoutVal)) {
+    return res.status(400).json({ error: 'Unbekanntes Workout' });
   }
   if (!['reps', 'seconds'].includes(unit)) return res.status(400).json({ error: 'unit muss reps oder seconds sein' });
 

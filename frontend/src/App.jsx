@@ -17,6 +17,7 @@ export default function App() {
   const [week, setWeek] = useState(null);
   const [gymSession, setGymSession] = useState(null);
   const [exercises, setExercises] = useState(null);
+  const [workouts, setWorkouts] = useState(null);
   const [error, setError] = useState(null);
 
   const guard = (fn) => (...args) => Promise.resolve(fn(...args)).catch((err) => setError(err.message));
@@ -110,8 +111,12 @@ export default function App() {
   });
 
   const loadSettings = guard(async () => {
-    const { exercises: list } = await api.getExercises();
+    const [{ exercises: list }, { workouts: workoutList }] = await Promise.all([
+      api.getExercises(),
+      api.getWorkouts()
+    ]);
     setExercises(list);
+    setWorkouts(workoutList);
     setView('settings');
   });
 
@@ -139,6 +144,25 @@ export default function App() {
       const others = prev.filter((e) => !updated.some((u) => u.key === e.key));
       return [...others, ...updated];
     });
+  });
+
+  const handleAddWorkout = guard(async (name) => {
+    await api.createWorkout(name);
+    const { workouts: list } = await api.getWorkouts();
+    setWorkouts(list);
+  });
+
+  const handleUpdateWorkout = guard(async (key, data) => {
+    await api.updateWorkout(key, data);
+    const { workouts: list } = await api.getWorkouts();
+    setWorkouts(list);
+  });
+
+  const handleDeleteWorkout = guard(async (key) => {
+    await api.deleteWorkout(key);
+    const [{ workouts: list }, { exercises: exList }] = await Promise.all([api.getWorkouts(), api.getExercises()]);
+    setWorkouts(list);
+    setExercises(exList);
   });
 
   const handleNavChange = (tab) => {
@@ -201,10 +225,14 @@ export default function App() {
         return (
           <Settings
             exercises={exercises}
+            workouts={workouts}
             onUpdate={handleUpdateExercise}
             onAdd={handleAddExercise}
             onDelete={handleDeleteExercise}
             onReorder={handleReorderExercises}
+            onAddWorkout={handleAddWorkout}
+            onUpdateWorkout={handleUpdateWorkout}
+            onDeleteWorkout={handleDeleteWorkout}
           />
         );
 

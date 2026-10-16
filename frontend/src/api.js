@@ -24,6 +24,12 @@ export const api = {
   getDaily: (date) => request(`/daily/${date}`),
   toggleDaily: (date, key) => post(`/daily/${date}/toggle`, { key }),
 
+  // Workouts
+  getWorkouts: () => request('/workouts'),
+  createWorkout: (name) => post('/workouts', { name }),
+  updateWorkout: (key, data) => patch(`/workouts/${key}`, data),
+  deleteWorkout: (key) => del(`/workouts/${key}`),
+
   // Gym
   getNextWorkout: () => request('/gym/next'),
   getTodayGym: () => request('/gym/today'),

@@ -1,8 +1,16 @@
 // Manuell gepflegt — bei jedem sichtbaren Release hier oben einen neuen
 // Eintrag ergänzen und APP_VERSION hochzählen.
-export const APP_VERSION = '1.7.1';
+export const APP_VERSION = '1.8.0';
 
 export const CHANGELOG = [
+  {
+    version: '1.8.0',
+    date: '2026-07-10',
+    notes: [
+      'Workouts sind jetzt frei konfigurierbar: eigene Workouts anlegen (z. B. Workout C), einzelne Workouts deaktivieren oder löschen',
+      'Deaktivierte Workouts werden bei der Rotation übersprungen — bei nur einem aktiven Workout bleibt es immer dasselbe'
+    ]
+  },
   {
     version: '1.7.1',
     date: '2026-07-06',
