@@ -1,12 +1,16 @@
 # Fitness-PWA
 
-**Fitness-Tracker** ist eine selbst gehostete Trainings-App als installierbare Web-App. Jeden Tag eine kurze Einheit zum Abhaken, dazu Gym-Workouts im Wechsel mit Satz-Tracking, Gewichten und Pausen-Timer. Läuft komplett auf eigener Hardware (bei mir ein Raspberry Pi 5), ohne Konto, ohne Tracking und ohne externe Dienste.
-
-![MIT-Lizenz](https://img.shields.io/badge/Lizenz-MIT-10b981)
+[![CI](https://github.com/Guppy997/fitness-pwa/actions/workflows/ci.yml/badge.svg)](https://github.com/Guppy997/fitness-pwa/actions/workflows/ci.yml)
+![Lizenz: MIT](https://img.shields.io/badge/Lizenz-MIT-10b981)
 ![React 18](https://img.shields.io/badge/React-18-10b981)
-![Node 24](https://img.shields.io/badge/Node-24-10b981)
+![Node 22.12+](https://img.shields.io/badge/Node-22.12%2B-10b981)
 ![SQLite](https://img.shields.io/badge/SQLite-WAL-10b981)
 ![PWA](https://img.shields.io/badge/PWA-installierbar-10b981)
+![18 Tests](https://img.shields.io/badge/Tests-18-10b981)
+
+> **In short (English):** A self-hosted workout tracker as an installable web app. Tick off a short daily routine, and run gym workouts in rotation with set tracking, remembered weights and a rest timer. Runs on your own hardware, no account, no tracking, no external services. The interface is in German.
+
+**Fitness-Tracker** ist eine selbst gehostete Trainings-App als installierbare Web-App. Jeden Tag eine kurze Einheit zum Abhaken, dazu Gym-Workouts im Wechsel mit Satz-Tracking, Gewichten und Pausen-Timer. Läuft komplett auf eigener Hardware (bei mir ein Raspberry Pi 5), ohne Konto, ohne Tracking und ohne externe Dienste.
 
 <table>
   <tr>
@@ -27,19 +31,25 @@
 
 ## Inhalt
 
+- [Im Einsatz](#im-einsatz)
 - [So funktioniert's](#so-funktionierts)
 - [Funktionen](#funktionen)
 - [Architektur](#architektur)
+- [Sicherheit und Datenschutz](#sicherheit-und-datenschutz)
 - [Selbst hosten](#selbst-hosten)
 - [Backup und Wiederherstellung](#backup-und-wiederherstellung)
 - [Entwicklung](#entwicklung)
-- [Releases und Updates](#releases-und-updates)
-- [Versionen](#versionen)
+- [Releases und Versionen](#releases-und-versionen)
 - [Projektstruktur](#projektstruktur)
 - [API](#api)
 - [Datenmodell](#datenmodell)
 - [Grenzen und Ideen](#grenzen-und-ideen)
+- [Entstehung](#entstehung)
 - [Lizenz](#lizenz)
+
+## Im Einsatz
+
+Die App läuft seit Version 1.0.0 im Juli 2026 auf meinem Raspberry Pi 5 und ist dort für mein eigenes Training in Benutzung.
 
 ## So funktioniert's
 
@@ -114,8 +124,21 @@ flowchart TB
 | Datenbank | SQLite im WAL-Modus, Foreign Keys an, Schema und Standard-Übungen werden beim ersten Start angelegt (`backend/src/db.js`) |
 | Betrieb | Docker Compose, beide Container non-root, mit Healthchecks und Ressourcen-Limits |
 | Zugriff | Tailscale-Sidecar mit eigenem Hostnamen und HTTPS-Zertifikat, oder lokal über `127.0.0.1:8091` |
+| Tests und CI | Vitest und Supertest für die API, GitHub Actions mit Node 22 und 24, Dependabot |
 
 Das Backend ist nie direkt erreichbar, nur über den nginx-Proxy im Frontend-Container. Dadurch laufen alle Anfragen über denselben Origin, und das Backend braucht kein CORS.
+
+## Sicherheit und Datenschutz
+
+- **Daten bleiben auf eigener Hardware:** Alles liegt in einer SQLite-Datei auf dem eigenen Server. Kein Konto, keine Cookies, keine Analyse-Tools.
+- **Keine Anmeldung:** Die App ist für eine Person gebaut. Geschützt wird sie über das Netz: Der Port ist nur an `127.0.0.1` gebunden, von außen geht es nur über Tailscale.
+- **Keine fremden Server:** Die App nutzt Systemschriften und lädt nichts von Dritten. Sie spricht nur mit dem eigenen Server.
+- **Backend abgeschirmt:** Erreichbar nur über den nginx-Proxy im Frontend-Container, nie direkt.
+- **SQL** ausschließlich mit Platzhaltern, Eingaben werden serverseitig geprüft (zum Beispiel nur erlaubte Felder beim Ändern einer Übung, keine neuen Sätze nach dem Abschluss eines Workouts).
+- **Container** laufen ohne Root-Rechte (`node` bzw. `nginx-unprivileged`), mit Healthchecks und CPU- und RAM-Limits.
+- **Abhängigkeiten:** Dependabot schlägt wöchentlich Updates für npm-Pakete und GitHub Actions vor, die CI testet jeden Push.
+
+Sicherheitslücken bitte vertraulich melden, wie in [`SECURITY.md`](SECURITY.md) beschrieben.
 
 ## Selbst hosten
 
@@ -157,7 +180,7 @@ Nach dem ersten Start merkt sich der Container seinen Zustand im Volume `ts-fitn
 | `PORT` | backend | `3001` | Port des Backends im Container |
 | `BACKUP_DIR` | backup.js | `<DB-Ordner>/backups` | Ziel für Backups |
 | `BACKUP_KEEP_DAYS` | backup.js | `14` | Wie lange Backups behalten werden |
-| `TS_AUTHKEY` | ts-fitness | – | Tailscale-Auth-Key für den Sidecar (siehe `.env.example`) |
+| `TS_AUTHKEY` | ts-fitness | leer | Tailscale-Auth-Key für den Sidecar (siehe `.env.example`) |
 | `VITE_API_PROXY_TARGET` | Vite (Entwicklung) | `http://localhost:3001` | Ziel für `/api` im Dev-Server |
 
 ## Backup und Wiederherstellung
@@ -185,16 +208,16 @@ docker compose start backend
 
 ## Entwicklung
 
-Backend und Frontend laufen lokal ohne Docker (Node 22 oder neuer):
+Backend und Frontend laufen lokal ohne Docker (Node 22.12 oder neuer):
 
 ```bash
-# Terminal 1 – Backend auf :3001
+# Terminal 1: Backend auf :3001
 cd backend
 npm ci
 mkdir -p data
 TZ=Europe/Berlin npm start
 
-# Terminal 2 – Frontend mit Hot Reload auf :5173, /api wird an :3001 weitergereicht
+# Terminal 2: Frontend mit Hot Reload auf :5173, /api wird an :3001 weitergereicht
 cd frontend
 npm ci
 npm run dev
@@ -222,24 +245,33 @@ node scripts/readme-screenshots.mjs                         # → docs/screensho
 
 Andere Adresse oder Chrome-Pfad über `APP_URL` bzw. `CHROME_PATH`. Zur Sicherheit läuft das Skript nur, wenn die App die Demo-Daten zeigt.
 
+### Tests
+
+```bash
+cd backend
+npm test
+```
+
+18 API-Tests mit Vitest und Supertest. Sie laufen gegen eine Datenbank im Arbeitsspeicher und berühren nie echte Daten. Abgedeckt sind die Standard-Workouts, die tägliche Einheit, die Gym-Rotation (auch mit deaktivierten Workouts), Sätze mit Gewicht und Rückgängig, Bestleistungen, Wochenziel und Streak sowie eigene Workouts und Übungen samt Reihenfolge.
+
+Die CI auf GitHub Actions führt bei jedem Push und Pull Request die Tests mit Node 22 und 24 aus und baut das Frontend.
+
 ### Konventionen im Code
 
 - Kommentare auf Deutsch und eher zum *Warum* als zum *Was*.
 - Standard-Workouts und -Übungen werden nur beim allerersten Start angelegt (leere Tabelle). So überleben eigene Änderungen und gelöschte Standard-Übungen jeden Neustart.
 - Zeitstempel speichert SQLite in UTC (`datetime('now')`). Kalendertage (`daily_logs.date`, `gym_sessions.date`) sind dagegen lokale Daten im Format `YYYY-MM-DD`.
 
-## Releases und Updates
+## Releases und Versionen
 
 Die App hat eine eigene Versionsnummer mit Versionsverlauf. Für ein sichtbares Release:
 
 1. In `frontend/src/changelog.js` oben einen Eintrag ergänzen und `APP_VERSION` hochzählen.
-2. Dieselbe Version in `frontend/package.json` eintragen.
-3. In dieser README den Abschnitt [Versionen](#versionen) und die Versionszeile unter den Screenshots anpassen.
+2. Dieselbe Version in `frontend/package.json` und `backend/package.json` eintragen.
+3. In dieser README die Tabelle unten und die Versionszeile unter den Screenshots anpassen.
 4. Deployen: `git pull && docker compose up -d --build backend frontend`
 
 Installierte Apps erkennen die neue Version beim nächsten Öffnen und zeigen dann in den Einstellungen „Update verfügbar“.
-
-## Versionen
 
 | Version | Datum | Wichtigste Änderungen |
 |---|---|---|
@@ -259,14 +291,20 @@ Alle Einzelheiten stehen im Versionsverlauf der App (Einstellungen) bzw. in [`fr
 
 ```
 .
+├── .github/
+│   ├── workflows/ci.yml       Tests und Build bei jedem Push (Node 22 und 24)
+│   └── dependabot.yml         Wöchentliche Updates für npm und GitHub Actions
 ├── backend/
 │   ├── Dockerfile
-│   └── src/
-│       ├── index.js           Express-App, TZ-Check, zentrale Fehlerbehandlung
-│       ├── db.js              Verbindung, Schema, Standard-Workouts und -Übungen, WAL-Checkpoints
-│       ├── backup.js          Backup-Skript (VACUUM INTO + Rotation)
-│       ├── util.js            Datumshilfen (lokale Kalendertage, ISO-Woche)
-│       └── routes/            daily.js, gym.js, exercises.js, workouts.js, stats.js
+│   ├── vitest.config.js       Testumgebung: TZ Europe/Berlin, Datenbank im Arbeitsspeicher
+│   ├── src/
+│   │   ├── index.js           Startpunkt: TZ-Check, Server starten
+│   │   ├── app.js             Express-App mit Routen und zentraler Fehlerbehandlung
+│   │   ├── db.js              Verbindung, Schema, Standard-Workouts und -Übungen, WAL-Checkpoints
+│   │   ├── backup.js          Backup-Skript (VACUUM INTO + Rotation)
+│   │   ├── util.js            Datumshilfen (lokale Kalendertage, ISO-Woche)
+│   │   └── routes/            daily.js, gym.js, exercises.js, workouts.js, stats.js
+│   └── test/api.test.js       API-Tests
 ├── frontend/
 │   ├── Dockerfile, nginx.conf
 │   ├── vite.config.js         PWA-Manifest, Service Worker, Offline-Cache
@@ -281,8 +319,9 @@ Alle Einzelheiten stehen im Versionsverlauf der App (Einstellungen) bzw. in [`fr
 │   └── readme-screenshots.mjs Screenshots für diese README
 ├── docs/screenshots/
 ├── docker-compose.yml
+├── ts-serve.json              tailscale-serve-Konfiguration für den Sidecar
 ├── .env.example               Vorlage für den Tailscale-Auth-Key
-└── ts-serve.json              tailscale-serve-Konfiguration für den Sidecar
+└── SECURITY.md                Sicherheitslücken vertraulich melden
 ```
 
 ## API
@@ -335,12 +374,16 @@ Alle Endpunkte liegen unter `/api` und sprechen JSON. Fehler kommen als `{ "erro
 - Oberfläche nur auf Deutsch, Zeitzone fest auf `Europe/Berlin`.
 - Der Signalton am Ende der Pause kommt nur, solange die App geöffnet ist. Bei gesperrtem Handy bleibt er aus.
 - Gleichnamige Übungen aus verschiedenen Workouts, etwa „Aufwärmen (Laufband)“ in A und B, erscheinen im Verlauf als zwei Zeilen.
-- Keine automatisierten Tests und kein CI.
+- Automatisierte Tests gibt es für die API, noch nicht für die Oberfläche.
 
 **Ideen**
 - Gleichnamige Übungen im Verlauf zusammenfassen.
 - Nach Updates auch beim Zurückholen der App in den Vordergrund suchen, nicht nur beim Öffnen.
 - Pausen-Ende per Web Push melden, damit es auch bei gesperrtem Handy ankommt.
+
+## Entstehung
+
+Entwickelt mit KI-Unterstützung (Claude). Idee, Architektur, Anforderungen, Tests und Betrieb liegen bei mir; jede Änderung ist geprüft und versioniert.
 
 ## Lizenz
 
