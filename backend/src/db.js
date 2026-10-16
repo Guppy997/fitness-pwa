@@ -72,7 +72,7 @@ db.prepare(`INSERT OR IGNORE INTO rotation_state (id, last_workout) VALUES (1, N
 
 // Workouts A/B einmalig seeden — nur beim allerersten Start (leere Tabelle).
 // INSERT OR IGNORE allein reicht nicht: es kann "nie erstellt" nicht von
-// "wurde von Aaron gelöscht" unterscheiden und würde gelöschte Workouts bei
+// "wurde von Hand gelöscht" unterscheiden und würde gelöschte Workouts bei
 // jedem Neustart wieder auferstehen lassen.
 if (db.prepare('SELECT COUNT(*) AS c FROM workouts').get().c === 0) {
   const insertWorkout = db.prepare(`
@@ -88,7 +88,7 @@ if (db.prepare('SELECT COUNT(*) AS c FROM workouts').get().c === 0) {
 }
 
 // Default-Übungen einmalig seeden — Bestand bleibt bei erneutem Start unangetastet,
-// damit von Aaron editierte Werte (Sätze/Gewicht/enabled) nicht überschrieben werden.
+// damit von Hand editierte Werte (Sätze/Gewicht/enabled) nicht überschrieben werden.
 const DEFAULT_EXERCISES = [
   // Täglich
   { key: 'squats', name: 'Kniebeugen', category: 'daily', workout: null, sets: 1, target: 10, unit: 'reps', rest_seconds: 30, order_index: 1, optional: 0 },
@@ -120,7 +120,7 @@ const DEFAULT_EXERCISES = [
 ];
 
 // Wie bei den Workouts: nur beim allerersten Start seeden, sonst werden von
-// Aaron gelöschte Standard-Übungen bei jedem Neustart wieder eingefügt.
+// Hand gelöschte Standard-Übungen bei jedem Neustart wieder eingefügt.
 if (db.prepare('SELECT COUNT(*) AS c FROM exercises').get().c === 0) {
   const insertExercise = db.prepare(`
     INSERT INTO exercises (key, name, category, workout, sets, target, unit, rest_seconds, order_index, optional, enabled)

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useRegisterSW } from 'virtual:pwa-register/react';
 import { api } from './api.js';
 import { today, currentMonth } from './constants.js';
 import NavBar from './components/NavBar.jsx';
@@ -19,6 +20,14 @@ export default function App() {
   const [exercises, setExercises] = useState(null);
   const [workouts, setWorkouts] = useState(null);
   const [error, setError] = useState(null);
+
+  // Service Worker gleich beim Start registrieren (Offline-Modus, Update-Erkennung).
+  // Der Update-Hinweis selbst steht nur in den Einstellungen (AppFooter) — die
+  // Registrierung darf aber nicht davon abhängen, dass man sie je öffnet.
+  const {
+    needRefresh: [needRefresh],
+    updateServiceWorker
+  } = useRegisterSW();
 
   const guard = (fn) => (...args) => Promise.resolve(fn(...args)).catch((err) => setError(err.message));
 
@@ -244,7 +253,9 @@ export default function App() {
   return (
     <div className="app-shell">
       {renderView()}
-      {view === 'settings' && <AppFooter />}
+      {view === 'settings' && (
+        <AppFooter needRefresh={needRefresh} onUpdate={() => updateServiceWorker(true)} />
+      )}
       {view !== 'gym-session' && <NavBar active={activeTab} onChange={handleNavChange} />}
     </div>
   );

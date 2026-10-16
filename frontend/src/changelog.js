@@ -1,8 +1,16 @@
 // Manuell gepflegt — bei jedem sichtbaren Release hier oben einen neuen
-// Eintrag ergänzen und APP_VERSION hochzählen.
-export const APP_VERSION = '1.8.0';
+// Eintrag ergänzen und APP_VERSION (+ "version" in package.json) hochzählen.
+export const APP_VERSION = '1.8.1';
 
 export const CHANGELOG = [
+  {
+    version: '1.8.1',
+    date: '2026-10-16',
+    notes: [
+      'Fix: Auf neu installierten Geräten funktioniert der Offline-Modus jetzt sofort, nicht erst nachdem man einmal die Einstellungen geöffnet hat',
+      'Wartung im Hintergrund: Server auf Node 24, reproduzierbare Builds und ein tägliches Backup der Trainingsdaten'
+    ]
+  },
   {
     version: '1.8.0',
     date: '2026-07-10',

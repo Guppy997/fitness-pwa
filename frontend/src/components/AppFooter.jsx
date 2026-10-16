@@ -1,19 +1,15 @@
 import { useState } from 'react';
-import { useRegisterSW } from 'virtual:pwa-register/react';
 import { APP_VERSION, CHANGELOG } from '../changelog.js';
 import { IconClose } from '../icons.jsx';
 
-export default function AppFooter() {
+// Registrierung des Service Workers passiert in App.jsx (immer), hier nur Anzeige
+export default function AppFooter({ needRefresh, onUpdate }) {
   const [historyOpen, setHistoryOpen] = useState(false);
-  const {
-    needRefresh: [needRefresh],
-    updateServiceWorker
-  } = useRegisterSW();
 
   return (
     <div className="app-footer">
       {needRefresh && (
-        <button type="button" className="update-badge" onClick={() => updateServiceWorker(true)}>
+        <button type="button" className="update-badge" onClick={onUpdate}>
           Update verfügbar
         </button>
       )}
