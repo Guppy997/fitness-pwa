@@ -124,7 +124,7 @@ flowchart TB
 | Datenbank | SQLite im WAL-Modus, Foreign Keys an, Schema und Standard-Übungen werden beim ersten Start angelegt (`backend/src/db.js`) |
 | Betrieb | Docker Compose, beide Container non-root, mit Healthchecks und Ressourcen-Limits |
 | Zugriff | Tailscale-Sidecar mit eigenem Hostnamen und HTTPS-Zertifikat, oder lokal über `127.0.0.1:8091` |
-| Tests und CI | Vitest und Supertest für die API, GitHub Actions mit Node 22 und 24, Renovate |
+| Tests und CI | Vitest und Supertest für die API, GitHub Actions mit Node 22 und 24, Renovate und Dependabot-Warnungen |
 
 Das Backend ist nie direkt erreichbar, nur über den nginx-Proxy im Frontend-Container. Dadurch laufen alle Anfragen über denselben Origin, und das Backend braucht kein CORS.
 
@@ -136,7 +136,7 @@ Das Backend ist nie direkt erreichbar, nur über den nginx-Proxy im Frontend-Con
 - **Backend abgeschirmt:** Erreichbar nur über den nginx-Proxy im Frontend-Container, nie direkt.
 - **SQL** ausschließlich mit Platzhaltern, Eingaben werden serverseitig geprüft (zum Beispiel nur erlaubte Felder beim Ändern einer Übung, keine neuen Sätze nach dem Abschluss eines Workouts).
 - **Container** laufen ohne Root-Rechte (`node` bzw. `nginx-unprivileged`), mit Healthchecks und CPU- und RAM-Limits.
-- **Abhängigkeiten:** Renovate schlägt Updates für npm-Pakete, GitHub Actions und Docker-Images vor, die CI testet jeden Push.
+- **Abhängigkeiten:** Renovate schlägt Updates für npm-Pakete, GitHub Actions und Docker-Images vor, Dependabot meldet bekannte Sicherheitslücken, die CI testet jeden Push.
 
 Sicherheitslücken bitte vertraulich melden, wie in [`SECURITY.md`](SECURITY.md) beschrieben.
 
